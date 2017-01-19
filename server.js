@@ -136,31 +136,56 @@ app.delete("/todos/:id", function(req, res){
 //PUT
 app.put("/todos/:id", function(req, res){
 	var todoId = parseInt(req.params.id, 10);
-	var matchedTodo = _.findWhere(todos, {id: todoId});
+	//var matchedTodo = _.findWhere(todos, {id: todoId});
 	
 	var body = _.pick(req.body, "description", "completed");
-	var validAttributes = {};
-	if(!matchedTodo){
-		return res.status(404).send();
-	}
+	var attributes = {};
+	//if(!matchedTodo){
+		//return res.status(404).send();
+	//}
 	
-	if(body.hasOwnProperty("completed") && _.isBoolean(body.completed)){
-		validAttributes.completed = body.completed;
-	}else if(body.hasOwnProperty("completed")){
-		return res.status(400).send();
-	}//ever provided attribute, no problem here
-	if(body.hasOwnProperty("description") &&_.isString(body.description) && body.description.trim().length > 0){
-		validAttributes.description = body.description;
+	if(body.hasOwnProperty("completed")){
+		attributes.completed = body.completed;
+	}//else if(body.hasOwnProperty("completed")){
+		//return res.status(400).send();
+	//}//ever provided attribute, no problem here
+	if(body.hasOwnProperty("description")){
+		attributes.description = body.description;
 		
-	}else if(body.hasOwnProperty("description")){
-		return res.status(400).send();
-	} 	
+	}//else if(body.hasOwnProperty("description")){
+		//return res.status(400).send();
+	//} 	
 	
-	 _.extend(matchedTodo, validAttributes);
-	 res.json(matchedTodo);
+	db.todo.findById(todoId).then(function(todo){
+		if(todo){
+			todo.update(attributes).then(function (todo){
+				res.json(todo.toJSON());
+			}, function(e){
+				res.status(400).json(e);
+			});
+		}else{
+			res.status(400).send();
+		}
+	},function(){
+		res.status(500).send();
+	});										
+			
+	   
+	
+	
+	 //_.extend(matchedTodo, validAttributes);
+	 //res.json(matchedTodo);
 	//body.hasOwnProperty("completed");
+});
+
+app.post("/user", function (req, res){
+	var body = _.pick(req.body, "email", "password");
 	
-	
+	db.user.create(body).then(function (user){
+		res.json(user.toJSON());
+	},function (e){
+		res.status(400).json(e);
+	});
 });
 
 db.sequelize.sync().then(function (){
